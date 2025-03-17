@@ -8,6 +8,7 @@ import json
 from faster_whisper import WhisperModel
 import cv2
 import time
+import argparse
 
 start_time = time.time()
 
@@ -20,8 +21,8 @@ def predict_with_model(model, processor, image_url, formatted_prompt):
     return output
 
 
-def setup():
-    model_path = "mlx-community/Qwen2.5-VL-7B-Instruct-8bit"
+def setup(model_name="mlx-community/Qwen2.5-VL-7B-Instruct-8bit"):
+    model_path = model_name
     model, processor = load(model_path)
     config = load_config(model_path)
     return model, processor, config
@@ -134,51 +135,57 @@ def identify_nodding(video_name, speakers, segment_dict, model, processor, confi
 
 
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process a video for social cue identification.")
+    parser.add_argument("video_filepath", type=str, help="Path to the video file.")
+    parser.add_argument("video_name", type=str, help="Name for the processed video.")
+    parser.add_argument("--model_name", type=str, default="mlx-community/Qwen2.5-VL-7B-Instruct-8bit", help="Name of the model to use.")
 
-# Main setup
-video_filepath = "Trimmed Code Review.mp4"
-video_name = "Trimmed_Code_Review"
+    args = parser.parse_args()
 
-# Main Inference Loop
-# 1. transcribing
-transcript_segments = transcribe(video_filepath)
+    video_filepath = args.video_filepath
+    video_name = args.video_name
+    model_name = args.model_name
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Transcript time: {elapsed_time} seconds")
+    # Main Inference Loop
+    # 1. transcribing
+    transcript_segments = transcribe(video_filepath)
 
-# Splice video into screenshots from segments
-save_segment_video(video_filepath, video_name, transcript_segments)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Transcript time: {elapsed_time} seconds")
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Segment time: {elapsed_time} seconds")
+    # Splice video into screenshots from segments
+    save_segment_video(video_filepath, video_name, transcript_segments)
 
-model, processor, config = setup()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Segment time: {elapsed_time} seconds")
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Setup time: {elapsed_time} seconds")
+    model, processor, config = setup(model_name)
 
-# 2. identify speakers
-image_url = f"segmented_videos/{video_name}/frame_0.jpg"
-speakers = identify_speakers(model, processor, image_url, config)
-print(f"Speakers are: {speakers}")
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Time to calculate Speakers: {elapsed_time} seconds")
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Setup time: {elapsed_time} seconds")
 
-# 3. assign transcript to speakers
-assigned_transcript_dict = assign_transcript_to_speakers(video_filepath, speakers, transcript_segments, model, processor, config)
+    # 2. identify speakers
+    image_url = f"segmented_videos/{video_name}/frame_0.jpg"
+    speakers = identify_speakers(model, processor, image_url, config)
+    print(f"Speakers are: {speakers}")
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time to calculate Speakers: {elapsed_time} seconds")
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Time to assign speakers to each segment: {elapsed_time} seconds")
+    # 3. assign transcript to speakers
+    assigned_transcript_dict = assign_transcript_to_speakers(video_filepath, speakers, transcript_segments, model, processor, config)
 
-# identify nodding and cues based on (2, 3) with the video
-identify_nodding(video_name, speakers, assigned_transcript_dict, model, processor, config)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time to assign speakers to each segment: {elapsed_time} seconds")
 
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Time for identification of nodding: {elapsed_time} seconds")
+    # identify nodding and cues based on (2, 3) with the video
+    identify_nodding(video_name, speakers, assigned_transcript_dict, model, processor, config)
 
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Time for identification of nodding: {elapsed_time} seconds") 

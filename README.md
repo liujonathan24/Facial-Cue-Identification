@@ -14,7 +14,7 @@ To use, clone this repository and install the required dependencies:
 pip install mlx-vlm==0.21.5 faster-whisper==1.1.1 opencv-python==4.10.0.84 pandas==2.2.3
 ```
 
-Then, add a video to the directory, edit the video file name, and run 
+Then, add a video to the directory. Then, run the following in terminal: 
 ```bash
-python Social_Cue_Identification.py
+python Social_Cue_Identification.py file_path file_name --model_name model_name_value
 ```
